@@ -1,38 +1,39 @@
 <h1 align="center">Mr. Robot CTF Walkthrough 2021</h1>
- Este es un write up de la CTF Mr. Robot de la plataforma Try Hack Me (También disponible en VulnHub). Te recomiendo encarecidamente que hagas esta CTF no solo por la temática de la serie sino porque es una máquina buena para práctica y es una máquina OSCP Like. Las flags no van a ser compartidas, ni las contraseñas obtenidas.
+
+This is a write up of the Mr. Robot CTF from the Try Hack Me platform (Also available on VulnHub). I highly recommend you do this CTF not only because of the theme of the TV show but because it's a good practice machine and it is an OSCP Like machine. Flags will not be shared, nor passwords obtained.
 
 <p align="center"><img src="img/wall.jpg"></p>
 
-En esta máquina vamos a ver dos formas (entre otras) de explotación de un servicio Wordpress a raíz de su desactualización e inseguridad, posteriormente escalaremos privilegios gracias a una versión antigua de nmap.
+On this machine we will see two ways (among others) of exploiting a Wordpress service due to its outdatedness and insecurity, then we will escalate privileges thanks to an old version of nmap.
 
 **Todo ello lo veremos desde la perspectiva y metodología de un test de penetración.**
 
-- Link de la máquina: [Mr. Robot](https://tryhackme.com/room/mrrobot)
-- Dificultad asignada por THM: Media
-- La IP de la máquina en mi caso será: 10.10.198.171 (Tú tendrás una ip distinta así que cámbiala para todos los pasos)
+- Link to the machine: [Mr. Robot](https://tryhackme.com/room/mrrobot)
+- Difficulty assigned by THM: Medium
+- The IP of the machine in my case will be: 10.10.198.171 (You will have a different ip so change it for all steps)
 
-¡¡Comencemos!!
+Let's get started!!!
 #
-<h1 align="center">Reconocimiento</h1>
+<h1 align="center">Reconnaissance</h1>
 
-Lo primero que haremos es escanear la máquina y ver que puertos están abiertos.
-Para ello haremos uso de nmap y utilizaremos una serie de flags que hará que nuestro escaneo sea más rápido, ya que el escaneo de puertos en ciertas máquinas puede llevar bastante tiempo.
+The first thing we will do is scan the machine and see which ports are open.
+To do this we will make use of nmap and use a series of flags that will make our scan faster, as port scanning on certain machines can take quite some time.
 
 ```bash
 nmap -p- --open -sS -Pn --min-rate 5000 -v -n 10.10.198.171
 ```
 
-La explicación del significado de cada flag es la siguiente:
+The explanation of the meaning of each flag is as follows:
 
-- ```-p-``` : indicamos que el escaneo se hará para todos los puertos.
-- ```--open``` : indicamos que solo nos interesan los puertos que estén abiertos.
-- ```-sS``` : Esta flag indica que queremos hacer un "SYN Scan" lo cual significa que los paquetes que mandaremos nunca completarán las conexiones TCP y eso hará que nuestro escaneo sea mucho menos intrusivo y más silencioso.
-- ```-Pn``` : Con esta opción indicamos que no queremos hacer host discovery (ya que sabemos quien es nuestro objetivo).
-- ```--min-rate 5000``` : Esta flag puede ser intercambiada por ```-T5```, ambas tienen la finalidad de hacer que nuestro escaneo sea más rápido (y ruidoso...). Para ser más detallista dicha flag indica que no queremos mandar menos de 5.000 paquetes por segundo.
-- ```-v``` : (verbose) Para ir viendo que puertos nos aparecen sobre la marcha.
-- ```-n``` : No queremos que se nos realice resolución DNS, ya que a quien escaneamos es a una IP, no a un dominio.
+- ```-p-``` : We indicate that the scan will be done for all ports.
+- ```--open``` : We indicate that we are only interested in ports that are open.
+- ```-sS``` : This flag indicates that we want to do a "SYN Scan" which means that the packets we will send will never complete the TCP connections and that will make our scan much less intrusive and quieter.
+- ```-Pn``` : With this option we indicate that we do not want to do host discovery (since we know who our target is).
+- ```--min-rate 5000``` : This flag can be exchanged for ```-T5```, both are intended to make our scanning faster (and noisier...). To be more detailed this flag indicates that we don't want to send less than 5,000 packets per second.
+- ```-v``` : (verbose) To see which ports appear as we go along.
+- ```-n``` : We don't want DNS resolution to be performed, since we are scanning an IP, not a domain.
 
-Del cual obtenemos el siguiente output:
+From which we obtain the following output:
 
 ```
 Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times will be slower.
@@ -51,21 +52,21 @@ PORT    STATE SERVICE
 443/tcp open  https
 ```
 
-En este punto sabemos que hay 2 puertos abiertos: 80 (HTTP) y 443 (HTTPS), viendo esto y que el puerto SSH no está abierto (al menos al exterior), se puede deducir que la única vía de entrar en la máquina es a través de dichos servicios web.
+At this point we know that there are 2 open ports: 80 (HTTP) and 443 (HTTPS), seeing this and that the SSH port is not open (at least to the outside), it can be deduced that the only way to enter the machine is through these web services.
 
-El paso por excelencia una vez que sabemos que puertos están abiertos es realizar un análisis a esos puertos mediante la ejecución de una serie de scripts con el fin de obtener más información: versión de servidor, tecnología, posibles vulnerabilidades a priori, etc...
+The step par excellence once we know which ports are open is to perform a scan to those ports by running a series of scripts in order to obtain more information: server version, technology, possible vulnerabilities a priori, etc...
 
 ```bash
 nmap -sV -sC -p 80,443 -Pn -n -min-rate 5000 10.10.198.171
 ```
 
-Donde :
+Where :
 
-- ```-sV``` : Nos mostrará si es posible la versión del servicio que esta corriendo en cada puerto.
-- ```-A``` : Ejecutaremos sobre dichos puertos todos los scripts relevantes (proporcionados por nmap).
-- ```-p 80,443```: Los puertos abiertos.
+- ```-sV``` : If possible, it will show the version of the service running on each port.
+- ```-A``` : We will run all relevant scripts (provided by nmap) on these ports.
+- ```-p 80,443```: Open ports.
 
-Obteniendo este output:
+Getting this output:
 
 ```
 Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times will be slower.
@@ -85,19 +86,19 @@ PORT    STATE SERVICE  VERSION
 |_Not valid after:  2025-09-13T10:45:03
 ```
 
-Para saber con qué tratamos vamos a ejecutar **WhatWeb**
+To find out what we are dealing with, we will run **WhatWeb**
 
 ```http://10.10.198.171 [200 OK] Apache, Country[RESERVED][ZZ], HTML5, HTTPServer[Apache], IP[10.10.198.171], Script, UncommonHeaders[x-mod-pagespeed], X-Frame-Options[SAMEORIGIN]```
 
-Parece que no nos ha arrojado mucha información...
+It doesn't seem to have given us much information...
 
-Así que vamos a visitar la web... Después de una impresionante introducción muy hacker, nos encontramos con este menú.
+So let's visit the web... After an impressive and very hacker intro, we come across this menu.
 
 <p align="center"><img src="img/1.png"></p>
 
-Después de probar cada uno de los comandos y ver varios videos, no encontré nada relevante, por otro lado viendo el código fuente de la página podremos encontrar en la línea 15 una IP que actualmente no nos da ninguna información adicional.
+After testing each of the commands and watching several videos, I did not find anything relevant, on the other hand looking at the source code of the page we can find in line 15 an IP that currently does not give us any additional information.
 
-En este punto conocemos las siguientes rutas:
+At this point we know the following routes:
 
 ```
 /prepare
@@ -108,25 +109,25 @@ En este punto conocemos las siguientes rutas:
 /join
 ```
 
-Ya que no parece haber más información a la vista, procederemos a hacer *Fuzzing*, lo cual consiste en hacer peticiones al servidor de diversas rutas extraídas de un diccionario con el objetivo de obtener rutas que existan. Para ello usaremos *Wfuzz* aunque otra potente herramienta es *Ffuf*.
+Since there seems to be no more information in sight, we will proceed to do *Fuzzing*, which consists of making requests to the server of several routes extracted from a dictionary with the objective of obtaining routes that exist. For this we will use *Wfuzz* although another powerful tool is *Ffuf*.
 
 ```bash
 wfuzz -c -L --hc=404 -t 200 -w /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt http://10.10.198.171//FUZZ
 ```
 
-- Con ffuf sería:
+- With ffuf it would be:
 
 ```bash
- ffuf -u http://10.10.198.171/FUZZ -w /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt -mc 200 -c -t 200
+ffuf -u http://10.10.198.171/FUZZ -w /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt -mc 200 -c -t 200
 ```
 
-La salida de **Wfuzz** nos muestra varias cosas interesantes
+The release of **Wfuzz** shows us several interesting things
 
 <p align="center"><img src="img/2.png"></p>
 
-Ahora sabemos que nos enfrentamos a un CMS (Sistema de gestión de contenidos), concretamente a Wordpress, ya que hay varias rutas pertenecientes a Wordpress (wp-content, wp-login, wp-includes).
+Now we know that we are dealing with a CMS (Content Management System), specifically Wordpress, since there are several paths belonging to Wordpress (wp-content, wp-login, wp-includes).
 
-Por otro lado, también existe un fichero ```robots.txt```.
+On the other hand, there is also a file ```robots.txt```.
 
 ```
 User-agent: *
@@ -134,26 +135,26 @@ fsocity.dic
 key-1-of-3.txt
 ```
 
-Hay dos archivos interesantes, uno parece ser la primera clave y el otro un diccionario (nos estarán sugiriendo usarlo para un ataque de fuerza bruta?).
+There are two interesting files, one seems to be the first key and the other a dictionary (are they suggesting to use it for a brute force attack?).
 
-Si accedemos a la ruta ```/key-1-of-3.txt```, podremos visualizar la primera flag.
-Y si accedemos a la ruta ```fsocity.dic```, podremos descargar el diccionario.
+If we access the path ```/key-1-of-3.txt```, we will be able to visualize the first flag.
+And if we access the path ```fsocity.dic```, we can download the dictionary.
 
-En este archivo ya no podemos hacer nada así que vamos a enumerar un poco más y ver si hay alguna vía potencial de entrada al margen de la posible fuerza bruta al login.
+In this file we can no longer do anything so let's enumerate a little more and see if there is any potential way of entry apart from the possible brute force login.
 
-También hay una ruta extraña ```/0``` vamos a ojearla..
+There is also a strange path ```/0``` let's take a look at it....
 
 <p align="center"><img src="img/3.png"></p>
 
-Parece ser un blog... he aprovechado para consultar **Wappalyzer**, revelándonos que se trata de un Wordpress 4.3.1 y que la página emplea PHP 5.5.29.
+It seems to be a blog... I took the opportunity to consult **Wappalyzer**, revealing that it is a Wordpress 4.3.1 and that the site uses PHP 5.5.29.
 #
-<h1 align="center">Análisis de vulnerabilidades</h1>
+<h1 align="center">Vulnerability Assessment</h1>
 
-Después de investigar de que no hay recursos de los cuales aprovecharse para inyecciones SQL o XSS, continuaremos con el diccionario que nos encontramos antes, así que accederemos a la ruta ```/wp-login```.
+After investigating that there are no resources to exploit for SQL or XSS injections, we will continue with the dictionary we encountered earlier, so we will access the ```/wp-login``` path.
 
 <p align="center"><img src="img/4.png"></p>
 
-Por un lado hasta ahora no hemos encontrado ningún nombre de usuario potencial.. pero probando algunas credenciales se puede observar una vulnerabilidad...
+On the one hand so far we have not found any potential user names... but by testing some credentials we can observe a vulnerability...
 #
 <div align="center">
     <img src="img/5.png">
@@ -161,21 +162,21 @@ Por un lado hasta ahora no hemos encontrado ningún nombre de usuario potencial.
 </div>
 
 #
-Si introducimos un usuario inválido el gestor de contenidos nos dice que el usuario es inválido, pero si introducimos uno existente nos dice que para ese usuario la contraseña es incorrecta.
+If we enter an invalid user the content manager tells us that the user is invalid, but if we enter an existing one it tells us that for that user the password is incorrect.
 
-Gracias a esta vulnerabilidad podríamos enumerar a posibles usuarios que se encuentren en la base de datos, pero no será necesario quien nos interesa es Elliot ( en base a la temática de la CTF se puede extrapolar una serie de nombres potenciales).
+Thanks to this vulnerability we could enumerate possible users that are in the database, but it will not be necessary who we are interested in is Elliot (based on the thematic of the CTF we can extrapolate a series of potential names).
 
-Revisando el diccionario que obtuvimos antes, pude apreciar de que existen muchas palabras repetidas cosa que hará que nuestro ataque por fuerza bruta basado en diccionario tarde más tiempo, para ello ordenaremos el diccionario y eliminaremos las líneas repetidas.
+Reviewing the dictionary that we obtained before, I could see that there are many repeated words which will make our brute force attack based on dictionary take more time, for this we will order the dictionary and eliminate the repeated lines.
 
 ```bash
 sort fsocity.dic | uniq > fsocity-sorted.dic
 ```
 #
-<h1 align="center">Explotación de vulnerabilidades</h1>
+<h1 align="center">Exploitation</h1>
 
-Para el ataque tenemos muchas herramientas a disposición entre ellas **Hydra**, el intruder de **BurpSuite**.. en este caso, ya que se trata de un Wordpress y de que en base a pruebas fue el que menos tardó, usaremos **WPScan**.
+For the attack we have many tools available including **Hydra**, the intruder of **BurpSuite**... in this case, since it is a Wordpress and that based on tests was the one that took the least time, we will use **WPScan**.
 
-Ubicados en el directorio donde tenemos nuestro diccionario ejecutamos:
+Located in the directory where we have our dictionary we execute:
 
 ```bash
 wpscan --url 10.10.198.171 --wp-content-dir wp-admin --usernames elliot --passwords fsocity-sorted.dic
@@ -184,51 +185,51 @@ wpscan --url 10.10.198.171 --wp-content-dir wp-admin --usernames elliot --passwo
 <p align="center"><img src="img/7.png"></p>
 
 
-- *Haciendo alusión al nombre de usuario, cabe mencionar que lo podríamos haber obtenido realizando fuerza bruta al campo username, con Hydra por ejemplo ```hydra -L fsocity.dic -p test 10.10.198.171 http-post-form "/wp-login/:log=^USER^&pwd=^PASS^wp-submit=Log+In:F=Invalid username"```*
+- *Referring to the username, it is worth mentioning that we could have obtained it by brute-forcing the username field, with Hydra, for example ```hydra -L fsocity.dic -p test 10.10.198.171 http-post-form "/wp-login/:log=^USER^&pwd=^PASS^wp-submit=Log+In:F=Invalid username"```*
 
-Ahora que tenemos las credenciales, nos logeamos.
+Now that we have the credentials, we log in.
 
 <p align="center"><img src="img/8.png"></p>
 
-Llegados a este punto, mostraré 2 formas de explotar este servicio Wordpress (existen otras..) y obtener una shell reversa.
+At this point, I will show 2 ways to exploit this Wordpress service (there are others...) and get a reverse shell.
 
-- Mediante la subida de un falso plugin.
-- Mediante el template 404
+- By uploading a fake plugin.
+- By using the 404 template
 
-Y si queréis probar por vosotros mismos también se puede conseguir una shell reversa a través de la subida de una imagen en el apartado "Media", solo tendríamos que añadir a nuestro payload una cabecera con los números mágicos del formato admitido por la web y renombrar dicho payload con ese formato.
+And if you want to try for yourselves you can also get a reverse shell through the upload of an image in the "Media" section, we would only have to add to our payload a header with the magic numbers of the format supported by the web and rename the payload with that format.
 #
 <h2 align="center">Template 404</h2>
 
-Iremos a Apperance -> Editor -> Accederemos al template 404 para editarlo
+Go to Apperance -> Editor -> Access the 404 template to edit it.
 
-El payload que emplearemos para entablar una shell reversa, lo podemos encontrar en pentestmonkey para obtenerlo en nuestra máquina podemos ejecutar:
+The payload that we will use to start a reverse shell, we can find it in pentestmonkey to obtain it in our machine we can execute:
 
 ```bash
 https://raw.githubusercontent.com/pentestmonkey/php-reverse-shell/master/php-reverse-shell.php
 ```
 
-Editaremos los valores ```$ip``` y ```$port``` de nuestro payload, por nuestra IP y el puerto que queramos emplear (en mi caso el puerto 443 (así nuestra conexión quedaría un poco enmascarada como una conexión perteneciente al servidor web)).
+We will edit the values ```$ip``` and ```$port``` of our payload, by our IP and the port that we want to use (in my case the port 443 (this way our connection would be a little masked as a connection belonging to the web server)).
 
-Ahora reemplazaremos el contenido del template 404 por el contenido de nuestro payload, y lo guardaremos.
+Now we will replace the content of the template 404 by the content of our payload, and we will save it.
 
 <p align="center"><img src="img/9.png"></p>
 
-Inciaremos un listener, ya que esperamos una conexión por parte de nuestra víctima.
+We will initiate a listener, as we expect a connection from our victim.
 
 ```nc -lvp 443```
 
-Y simplemente visitaremos una página aleatoria o mismamente la página ```/wp-content/themes/twentyfifteen/404.php```
+And simply visit a random page or even the page ```/wp-content/themes/twentyfifteen/404.php```.
 
-Tan pronto accedamos, ya habremos obtenido una revese shell al usuario **daemon**
+As soon as we log in, we will have already obtained a shell revese to the user **daemon**.
 #
-<h2 align="center">Subida de un falso plugin</h2>
+<h2 align="center">Upload of a fake plugin</h2>
 
-Para ello accedemos a Plugins -> Add New -> Upload Plugin.
+To do so, go to Plugins -> Add New -> Upload Plugin.
 
 <p align="center"><img src="img/10.png"></p>
 
 
-Podríamos emplear el payload mencionado en la anterior sección tal cual, pero no cumplirá con el formato de un plugin de WordPress.. tendremos que hacer de nuestro payload un plugin válido, para ello comenzaremos por añadir la siguiente cabecera a nuestro payload.
+We could use the payload mentioned in the previous section as is, but it will not comply with the format of a WordPress plugin... we will have to make our payload a valid plugin, to do this we will start by adding the following header to our payload.
 
 ```
 /*
@@ -252,71 +253,75 @@ Domain Path: /languages
 */
 ```
 
-Ahora necesitamos empaquetarlo todo en un zip.
+Now we need to pack everything in a zip file.
 
 ```bash
 sudo zip reverse.zip php-reverse-shell.php
 ```
 
-Inciaremos un listener, ya que esperamos una conexión por parte de nuestra víctima.
+We will initiate a listener, as we expect a connection from our victim.
 
 ```nc -lvp 443```
 
-Por último subiremos nuestro payload ```reverse.zip```
+Finally we will upload our payload ```reverse.zip```.
 
 <p align="center"><img src="img/11.png"></p>
 
-Pero esto no es suficiente ahora tenemos que activarlo, para ello volvemos a Plugins y clicamos en "Activate"
+But this is not enough, now we have to activate it, for this we go back to Plugins and click on "Activate".
 
 <p align="center"><img src="img/12.png"></p>
 
-Tan pronto lo activemos, ya habremos obtenido una revese shell al usuario **daemon**
+As soon as we activate it, we will have already obtained a shell revese to the user **daemon**.
 
 #
-<h2 align="center">Continuando con la explotación</h2>
+<h2 align="center">Continuing the exploitation</h2>
 
-Ya sea por uno y otro método hemos conseguido una shell (o algo parecido.. ya que es una rawshell)
+Either by one or the other method we have obtained a shell (or something similar, since it is a rawshell).
 
 <p align="center"><img src="img/13.png"></p>
 
-Vamos a mejorar nuestra shell y obtener una tty en condiciones
+We are going to improve our shell and get a proper tty
 
 ```bash
 python -c 'import pty; pty.spawn("/bin/bash")'
 ```
 
-Llegados a este punto podemos navegar por el sistema de ficheros, encontrando así el usuario **robot** ubicado en ```/home/robot```
+At this point we can navigate through the file system, finding the user **robot** located in ```/home/robot```.
 
 <p align="center"><img src="img/14.png"></p>
 
-En este directorio podemos encontrar 2 ficheros, la segunda flag y lo que por el nombre parece ser una contraseña encriptada en MD5.
+In this directory we can find 2 files, the second flag and what by the name seems to be a password encrypted in MD5.
 
-Si intentamos ver la clave, no podremos, ya que el propietario de dicho archivo es el usuario **robot** y solo él puede leer el archivo y nada más.
+If we try to see the key, we will not be able to, since the owner of this file is the user **robot** and only he can read the file and nothing else.
 
 <p align="center"><img src="img/15.png"></p>
 
-Por otro lado sí que podemos consultar la contraseña encriptada.
+On the other hand we can consult the encrypted password.
 
-Así que la copiamos a un archivo en nuestra máquina, en mi caso le llamaré ```hash```
+So we copy it to a file on our machine, in my case I will call it ````````.
 
-Para desencriptarla tendremos que realizar otro ataque de fuerza bruta, esta vez usaremos **John The Ripper** y el diccionario ````rockyou```
+To decrypt it we will have to perform another brute force attack, this time we will use **John The Ripper** and the dictionary ```rockyou```.
 
-```john --format=raw-MD5 --wordlist=/usr/share/wordlists/rockyou.txt hash```
+```bash
+john --format=raw-MD5 --wordlist=/usr/share/wordlists/rockyou.txt hash
+```
 
 <p align="center"><img src="img/16.png"></p>
 
-Obteniendo la contraseña para el usuario **robot**
+Getting the password for the user **robot**.
 
-Ahora en la shell cambiamos de usuario e introducimos las credenciales
+Now in the shell we change the user and enter the credentials
 
-```su robot```
+```bash
+su robot
+```
 
-Ahora siendo el usuario **robot** podremos visualizar la 2º flag.
+Now being the user **robot** we will be able to visualize the 2nd flag.
 
 #
-<h1 align="center">Escalación de privilegios</h1>
+<h1 align="center">Privilege escalation</h1>
 
-Lo primero que probé fue si podía ejecutar algún comando con sudo (```sudo -l```). Así que mi segundo paso fue tratar de abusar de algún SUID, para ello ejecutamos el siguiente comando:
+The first thing I tried was if I could execute some command with sudo (```sudo -l```). So my second step was to try to abuse some SUID, for that we executed the following command:
 
 ```bash
 find / -user root -perm -4000 -exec ls -ldb {} \; 2> /dev/null
@@ -324,15 +329,15 @@ find / -user root -perm -4000 -exec ls -ldb {} \; 2> /dev/null
 
 <p align="center"><img src="img/17.png"></p>
 
-Lo que destaca ahí es ```/usr/local/bin/nmap```.
+What stands out here is ```/usr/local/bin/nmap```.
 
-Podemos consultar en [GTFOBins](https://gtfobins.github.io) la foma de abusar de dicha *capability*.
+We can consult in [GTFOBins](https://gtfobins.github.io) the way to abuse this *capability*.
 
-Como nuestra finalidad es obtener ejecución de comandos como superusuario, encontramos este método.
+As our purpose is to obtain command execution as superuser, we find this method.
 
 <p align="center"><img src="img/18.png"></p>
 
-donde nos figura que solo está disponible para versiones de nmap entre 2.02 a 5.21, así que comprobamos nuestra versión.
+where it appears that it is only available for nmap versions between 2.02 and 5.21, so we check our version.
 
 ```
 nmap -V
@@ -340,10 +345,10 @@ nmap -V
 nmap version 3.81 ( http://www.insecure.org/nmap/ )
 ```
 
-Como es válida, procedemos a abusar de dicho SUID.
+As it is valid, we proceed to abuse this SUID.
 
 <p align="center"><img src="img/19.png"></p>
 
-Finalmente conseguimos una rawshell como root, ahora solo debemos visualizar la última flag en ```/root/key-3-of-3.txt```
+Finally we get a rawshell as root, now we just need to display the last flag in ```/root/key-3-of-3.txt```
 
 <p align="center"><img src="img/20.jpg"></p>
