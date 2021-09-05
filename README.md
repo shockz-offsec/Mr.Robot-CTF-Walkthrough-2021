@@ -14,7 +14,7 @@ On this machine we will see two ways (among others) of exploiting a Wordpress se
 
 Let's get started!!!
 #
-<h1 align="center">Reconnaissance</h1>
+<h1 align="center">Enumeration</h1>
 
 The first thing we will do is scan the machine and see which ports are open.
 To do this we will make use of nmap and use a series of flags that will make our scan faster, as port scanning on certain machines can take quite some time.
