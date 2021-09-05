@@ -1,5 +1,5 @@
 <h1 align="center">Mr. Robot CTF Walkthrough 2021</h1>
- Esto es un write up de la CTF Mr. Robot de la plataforma Try Hack Me (También disponible en VulnHub). Te recomiendo encarecidamente que hagas esta CTF no solo por la temática de la serie sino porque es una máquina buena para práctica y es una máquina OSCP Like. Las flags no van a ser compartidas, ni las contraseñas obtenidas.
+ Este es un write up de la CTF Mr. Robot de la plataforma Try Hack Me (También disponible en VulnHub). Te recomiendo encarecidamente que hagas esta CTF no solo por la temática de la serie sino porque es una máquina buena para práctica y es una máquina OSCP Like. Las flags no van a ser compartidas, ni las contraseñas obtenidas.
 
 <p align="center"><img src="img/wall.jpg"></p>
 
