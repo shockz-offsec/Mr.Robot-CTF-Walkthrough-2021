@@ -345,8 +345,5 @@ Como es válida, procedemos a abusar de dicho SUID.
 <p align="center"><img src="img/19.png"></p>
 
 Finalmente conseguimos una rawshell como root, ahora solo debemos visualizar la última flag en ```/root/key-3-of-3.txt```
-<<<<<<< HEAD
 
 <p align="center"><img src="img/20.jpg"></p>
-=======
->>>>>>> 4ab4991cfc873b84f34eb7ea6721fa1353ebd1a7
