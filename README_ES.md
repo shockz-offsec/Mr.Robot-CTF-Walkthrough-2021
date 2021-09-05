@@ -14,7 +14,7 @@ En esta máquina vamos a ver dos formas (entre otras) de explotación de un serv
 
 ¡¡Comencemos!!
 #
-<h1 align="center">Reconocimiento</h1>
+<h1 align="center">Reconocimiento y Enumeración</h1>
 
 Lo primero que haremos es escanear la máquina y ver que puertos están abiertos.
 Para ello haremos uso de nmap y utilizaremos una serie de flags que hará que nuestro escaneo sea más rápido, ya que el escaneo de puertos en ciertas máquinas puede llevar bastante tiempo.
