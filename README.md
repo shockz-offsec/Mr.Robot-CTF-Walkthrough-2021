@@ -6,7 +6,7 @@ This is a write up of the Mr. Robot CTF from the Try Hack Me platform (Also avai
 
 On this machine we will see two ways (among others) of exploiting a Wordpress service due to its outdatedness and insecurity, then we will escalate privileges thanks to an old version of nmap.
 
-**Todo ello lo veremos desde la perspectiva y metodología de un test de penetración.**
+**We will see all this from the perspective and methodology of a penetration test.**
 
 - Link to the machine: [Mr. Robot](https://tryhackme.com/room/mrrobot)
 - Difficulty assigned by THM: Medium
